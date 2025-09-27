@@ -4,6 +4,17 @@
 
 mkdir -p /config/wg_confs
 
+IFS=',' read -ra SECRET_IDS <<<"${BWS_SECRET_IDS}"
+for i in "${SECRET_IDS[@]}"; do
+    SECRET_ID=$(echo "$i" | xargs) # Trim whitespace
+    config_filename=$(bws secret get "$SECRET_ID" | jq -r .key)
+    config_content=$(bws secret get "$SECRET_ID" | jq -r .value)
+    echo "$config_content" >/config/wg_confs/"$config_filename".conf
+done
+
+
+
+
 # migration to subfolder for wg confs
 if [[ -z "$(ls -A /config/wg_confs)" ]] && [[ -f /config/wg0.conf ]]; then
     echo "**** Performing migration to new folder structure for confs. Please see the image changelog 2023-10-03 entry for more details. ****"

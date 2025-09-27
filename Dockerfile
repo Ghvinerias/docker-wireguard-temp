@@ -12,24 +12,25 @@ LABEL maintainer="thespad"
 RUN \
   if [ -z ${WIREGUARD_RELEASE+x} ]; then \
   WIREGUARD_RELEASE=$(curl -sL "http://dl-cdn.alpinelinux.org/alpine/v3.22/main/x86_64/APKINDEX.tar.gz" | tar -xz -C /tmp \
-    && awk '/^P:wireguard-tools$/,/V:/' /tmp/APKINDEX | sed -n 2p | sed 's/^V://'); \
+  && awk '/^P:wireguard-tools$/,/V:/' /tmp/APKINDEX | sed -n 2p | sed 's/^V://'); \
   fi && \
   echo "**** install dependencies ****" && \
   apk add --no-cache \
-    bc \
-    coredns \
-    grep \
-    iproute2 \
-    iptables \
-    ip6tables \
-    iputils \
-    kmod \
-    libcap-utils \
-    libqrencode-tools \
-    net-tools \
-    nftables \
-    openresolv \
-    wireguard-tools==${WIREGUARD_RELEASE} && \
+  bc \
+  curl \
+  openssh-client \
+  jq \
+  grep \
+  iproute2 \
+  iptables \
+  ip6tables \
+  iputils \
+  kmod \
+  libcap-utils \
+  net-tools \
+  nftables \
+  openresolv \
+  wireguard-tools==${WIREGUARD_RELEASE} && \
   echo "wireguard" >> /etc/modules && \
   sed -i 's|\[\[ $proto == -4 \]\] && cmd sysctl -q net\.ipv4\.conf\.all\.src_valid_mark=1|[[ $proto == -4 ]] \&\& [[ $(sysctl -n net.ipv4.conf.all.src_valid_mark) != 1 ]] \&\& cmd sysctl -q net.ipv4.conf.all.src_valid_mark=1|' /usr/bin/wg-quick && \
   rm -rf /etc/wireguard && \
@@ -37,10 +38,15 @@ RUN \
   printf "Linuxserver.io version: ${VERSION}\nBuild-date: ${BUILD_DATE}" > /build_version && \
   echo "**** clean up ****" && \
   rm -rf \
-    /tmp/*
+  /tmp/*
 
 # add local files
 COPY /root /
+COPY --from=bitwarden/bws /bin/bws /bin/bws
+COPY --from=bitwarden/bws /etc/ssl/certs /etc/ssl/certs
+COPY --from=bitwarden/bws /lib /lib
+COPY --from=bitwarden/bws /lib64 /lib64
 
-# ports and volumes
-EXPOSE 51820/udp
+ENV PUID=1000
+ENV GUID=1000
+ENV TZ=Asia/Tbilisi
